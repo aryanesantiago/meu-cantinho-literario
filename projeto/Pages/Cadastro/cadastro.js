@@ -1,17 +1,17 @@
 
-import React, { useState } from "react";
-import { 
-  Alert, 
-  Image, 
+import {
+  Alert,
+  Image,
   ImageBackground,
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  View 
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
+
 import styles from '../Cadastro/styles'; 
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebaseConfig"; 
@@ -44,7 +44,10 @@ export default function CadastroScreen({ navigation }) {
 
     try {
       setLoading(true);
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+
       console.log("Usuário criado:", userCredential.user);
 
       Alert.alert("Cadastro realizado!", "Você já pode fazer login.");
@@ -52,6 +55,7 @@ export default function CadastroScreen({ navigation }) {
 
     } catch (error) {
       console.log("Erro Firebase:", error); 
+
       let mensagem = "";
       switch(error.code){
         case "auth/email-already-in-use":
@@ -146,5 +150,68 @@ export default function CadastroScreen({ navigation }) {
       </ScrollView>
     </KeyboardAvoidingView>
     </ImageBackground>
+=======
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+        <View style={styles.card}>
+          <Text style={styles.title}>INOVE</Text>
+          <View style={styles.titleRow}>
+            <Image source={require("../../assets/box.png")} style={styles.image} />
+            <Text style={styles.title2}>TRACK</Text>
+          </View>
+          <Text style={styles.subtitle}>Cadastro</Text>
+
+          <Text style={styles.label}>Nome</Text>
+          <TextInput
+            style={styles.input}
+            value={nome}
+            onChangeText={setNome}
+            placeholder="Digite seu nome"
+          />
+
+          <Text style={styles.label}>E-mail</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholder="Digite seu e-mail"
+          />
+
+          <Text style={styles.label}>Senha</Text>
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              placeholder="••••••••"
+            />
+          </View>
+
+          <TouchableOpacity
+            onPress={handleCadastro}
+            style={[styles.button, loading && { opacity: 0.7 }]}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>{loading ? "Cadastrando..." : "Cadastrar"}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Login")}
+            style={{ marginTop: 15 }}
+          >
+            <Text style={styles.registerText}>
+              Já tem uma conta? Faça login
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+
   );
 }
