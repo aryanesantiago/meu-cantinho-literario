@@ -17,6 +17,6 @@ Ele oferece funcionalidades como cadastro de livros, controle do status de leitu
 
 💻 Tecnologias utilizadas
 - **React Native** (Front-end mobile)  
-- **Firebase** (Autenticação e Firestore para armazenamento de dados)  
+- **Firebase** (Autenticação e Firestore para armazenamento de dados)   
 - **React Navigation** (Navegação entre telas)  
 - **AsyncStorage** (Persistência de login no dispositivo)  
