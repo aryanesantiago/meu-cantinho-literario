@@ -1,8 +1,6 @@
-
 import React, { useState } from "react";
 import { 
   Alert, 
-  Image, 
   ImageBackground,
   KeyboardAvoidingView, 
   Platform, 
@@ -14,7 +12,8 @@ import {
 } from "react-native";
 import styles from '../Cadastro/styles'; 
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebaseConfig"; 
+import { auth, db } from "../../firebaseConfig"; 
+import { setDoc, doc } from "firebase/firestore"; 
 
 export default function CadastroScreen({ navigation }) {
   const [nome, setNome] = useState("");
@@ -45,7 +44,15 @@ export default function CadastroScreen({ navigation }) {
     try {
       setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log("Usuário criado:", userCredential.user);
+      const user = userCredential.user;
+
+      // Salva no Firestore
+      await setDoc(doc(db, "usuarios", user.uid), {
+        nome: nome,
+        sobrenome: sobrenome,
+        email: email,
+        criadoEm: new Date()
+      });
 
       Alert.alert("Cadastro realizado!", "Você já pode fazer login.");
       navigation.replace("Login");
@@ -73,14 +80,11 @@ export default function CadastroScreen({ navigation }) {
   }
 
   return (
-
     <ImageBackground
       source={require("../../assets/fundo2.png")} 
       style={styles.background}
       resizeMode="cover" 
     >
-
-    
     <KeyboardAvoidingView
       style={styles.content}  
       behavior={Platform.OS === "ios" ? "padding" : undefined}

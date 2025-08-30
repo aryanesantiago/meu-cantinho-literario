@@ -32,6 +32,13 @@ export default StyleSheet.create({
     marginTop: 5,
   },
 
+  botaoLogout: {
+  position: "absolute",
+  bottom: 70,   
+  right: 20,
+},
+
+
   navegacaoInferior: {
     flexDirection: "row",
     justifyContent: "space-around",
