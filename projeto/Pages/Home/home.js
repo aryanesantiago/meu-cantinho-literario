@@ -30,9 +30,12 @@ export default function HomeScreen() {
           )}
         </View>
 
-        <TouchableOpacity style={styles.botaoCadastrar}>
-          <Text style={styles.textoCadastrar}>Cadastrar</Text>
-        </TouchableOpacity>
+       <TouchableOpacity
+         style={styles.botaoCadastrar}
+         onPress={() => navigation.navigate("Cadastrar livro")}
+       >
+      <Text style={styles.textoCadastrar}>Cadastrar</Text>
+      </TouchableOpacity>
       </View>
 
       <Text style={styles.titulo}>Meus Livros</Text>
