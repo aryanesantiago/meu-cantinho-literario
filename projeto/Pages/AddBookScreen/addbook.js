@@ -1,17 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  Alert, 
-  ActivityIndicator, 
-  ScrollView,
-  Platform,
-  KeyboardAvoidingView
+  View, Text, TextInput, TouchableOpacity, Alert, 
+  ActivityIndicator, ScrollView, Platform, KeyboardAvoidingView, Image 
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+import { db, auth } from "../../firebaseConfig";
+import { setDoc, doc, Timestamp } from "firebase/firestore"; 
+import { onAuthStateChanged } from "firebase/auth";
+
 import styles from "./styles"; 
 
 function formatarDataParaYYYYMMDD(data) {
@@ -31,6 +30,8 @@ export default function AddBookScreen({ navigation }) {
   const [numPaginas, setNumPaginas] = useState(""); 
   const [avaliacao, setAvaliacao] = useState(0); 
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);
+  const [user, setUser] = useState(null);
 
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([
@@ -39,61 +40,131 @@ export default function AddBookScreen({ navigation }) {
     { label: "Lido", value: "Lido" },
   ]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return unsubscribe;
+  }, []);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permissão necessária", "Conceda acesso à câmera e galeria.");
+      return;
+    }
+
+    Alert.alert(
+      "Selecionar Imagem",
+      "Escolha uma opção:",
+      [
+        {
+          text: "Câmera",
+          onPress: async () => {
+            const result = await ImagePicker.launchCameraAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [4, 3],
+              quality: 1,
+            });
+            if (!result.canceled) setImage(result.assets[0].uri);
+          },
+        },
+        {
+          text: "Galeria",
+          onPress: async () => {
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [4, 3],
+              quality: 1,
+            });
+            if (!result.canceled) setImage(result.assets[0].uri);
+          },
+        },
+        { text: "Cancelar", style: "cancel" },
+      ]
+    );
+  };
+
   const handleDateChange = (text) => {
     let formattedText = text.replace(/[^0-9]/g, ""); 
-    
-    if (formattedText.length > 2) {
-      formattedText = formattedText.slice(0, 2) + "/" + formattedText.slice(2);
-    }
-    if (formattedText.length > 5) {
-      formattedText = formattedText.slice(0, 5) + "/" + formattedText.slice(5, 9);
-    }
-    
+    if (formattedText.length > 2) formattedText = formattedText.slice(0, 2) + "/" + formattedText.slice(2);
+    if (formattedText.length > 5) formattedText = formattedText.slice(0, 5) + "/" + formattedText.slice(5, 9);
     setDataLancamento(formattedText);
   };
 
-  function handleAddBook() {
+  const handleAddBook = async () => {
     if (!titulo || !autor) {
       Alert.alert("Erro", "Preencha título e autor!");
       return;
     }
-    
-    const dataFormatada = formatarDataParaYYYYMMDD(dataLancamento);
 
-    const livro = {
-      titulo,
-      autor,
-      status,
-      dataLancamento: dataFormatada,
-      numPaginas: numPaginas || null,
-      avaliacao: status === "Lido" ? avaliacao : 0,
-    };
+    if (!user) {
+      Alert.alert("Erro", "Usuário não autenticado.");
+      return;
+    }
 
     setLoading(true);
-    setTimeout(() => {
-      Alert.alert(
-        "Sucesso", 
-        `Livro "${titulo}" adicionado com avaliação de ${status === "Lido" ? avaliacao : 0} estrela(s)!`
-      );
+
+    try {
+      let localImageUri = null;
+
+      if (image) {
+        const fileName = `${Date.now()}_${titulo}.jpg`;
+        const dest = FileSystem.documentDirectory + fileName;
+        await FileSystem.copyAsync({ from: image, to: dest });
+        localImageUri = dest;
+      }
+
+      const livro = {
+        titulo,
+        autor,
+        status,
+        dataLancamento: formatarDataParaYYYYMMDD(dataLancamento),
+        numPaginas: numPaginas || null,
+        avaliacao: status === "Lido" ? avaliacao : 0,
+        imagem: localImageUri,
+        criadoEm: Timestamp.now(),
+      };
+
+      const livroRef = doc(db, "usuarios", user.uid, "livros", `${Date.now()}`);
+      await setDoc(livroRef, livro);
+
+      Alert.alert("Sucesso", `Livro "${titulo}" adicionado!`);
+
+   
       setTitulo("");
       setAutor("");
       setStatus("Quero Ler");
       setDataLancamento("");
       setNumPaginas("");
       setAvaliacao(0);
-      setLoading(false);
+      setImage(null);
+
       navigation.goBack();
-    }, 800);
-  }
+
+    } catch (error) {
+      console.log("Erro Firebase:", error);
+      Alert.alert("Erro", "Não foi possível adicionar o livro. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} 
     >
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={{ ...styles.container, paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.card}>
           <Text style={styles.title}>Adicione seu livro favorito!</Text>
+
           <Text style={styles.label}>Título *</Text>
           <TextInput
             style={styles.input}
@@ -128,10 +199,10 @@ export default function AddBookScreen({ navigation }) {
           <TextInput
             style={styles.input}
             value={dataLancamento}
-            onChangeText={handleDateChange} 
+            onChangeText={handleDateChange}
             placeholder="DD/MM/AAAA"
             keyboardType="numeric"
-            maxLength={10} 
+            maxLength={10}
           />
 
           <Text style={styles.label}>Número de Páginas</Text>
@@ -142,6 +213,33 @@ export default function AddBookScreen({ navigation }) {
             placeholder="Número de páginas"
             keyboardType="numeric"
           />
+
+          <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+  <Ionicons name="camera" size={24} color="#661414" style={styles.imageButtonIcon} />
+  <Text style={styles.imageButtonText}>
+    {image ? "Trocar Imagem" : "Adicionar Imagem"}
+  </Text>
+</TouchableOpacity>
+
+{image && (
+  <View style={styles.imageContainer}>
+    <Image
+      source={{ uri: image }}
+      style={styles.imagePreview}
+      resizeMode="cover"
+    />
+
+    <TouchableOpacity
+      style={styles.removeImageButton}
+      onPress={() => setImage(null)}
+    >
+      <Ionicons name="trash" size={20} color="#661414" />
+      <Text style={styles.removeImageText}>Remover Imagem</Text>
+    </TouchableOpacity>
+  </View>
+)}
+
+
 
           <Text style={styles.label}>Avaliação</Text>
           <View style={{ flexDirection: "row", marginBottom: 15 }}>

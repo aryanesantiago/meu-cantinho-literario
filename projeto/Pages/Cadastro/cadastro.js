@@ -46,7 +46,7 @@ export default function CadastroScreen({ navigation }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Salva no Firestore
+
       await setDoc(doc(db, "usuarios", user.uid), {
         nome: nome,
         sobrenome: sobrenome,
