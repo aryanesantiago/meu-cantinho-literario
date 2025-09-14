@@ -5,8 +5,9 @@ import {
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";  
 import { db, auth } from "../../firebaseConfig";
 import { setDoc, doc, Timestamp } from "firebase/firestore"; 
 import { onAuthStateChanged } from "firebase/auth";
@@ -29,6 +30,7 @@ export default function AddBookScreen({ navigation }) {
   const [dataLancamento, setDataLancamento] = useState(""); 
   const [numPaginas, setNumPaginas] = useState(""); 
   const [avaliacao, setAvaliacao] = useState(0); 
+  const [avaliacaoEscrita, setAvaliacaoEscrita] = useState("");
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
   const [user, setUser] = useState(null);
@@ -38,6 +40,19 @@ export default function AddBookScreen({ navigation }) {
     { label: "Quero Ler", value: "Quero Ler" },
     { label: "Lendo", value: "Lendo" },
     { label: "Lido", value: "Lido" },
+  ]);
+
+  const [genero, setGenero] = useState(null);
+  const [generoOutros, setGeneroOutros] = useState("");
+  const [openGenero, setOpenGenero] = useState(false);
+  const [itemsGenero, setItemsGenero] = useState([
+    { label: "Romance", value: "Romance" },
+    { label: "Aventura", value: "Aventura" },
+    { label: "Fantasia", value: "Fantasia" },
+    { label: "Ficção", value: "Ficção" },
+    { label: "Drama", value: "Drama" },
+    { label: "Terror", value: "Terror" },
+    { label: "Outros", value: "Outros" },
   ]);
 
   useEffect(() => {
@@ -95,8 +110,8 @@ export default function AddBookScreen({ navigation }) {
   };
 
   const handleAddBook = async () => {
-    if (!titulo || !autor) {
-      Alert.alert("Erro", "Preencha título e autor!");
+    if (!titulo || !autor || !genero) {
+      Alert.alert("Erro", "Preencha título, autor e gênero!");
       return;
     }
 
@@ -113,7 +128,7 @@ export default function AddBookScreen({ navigation }) {
       if (image) {
         const fileName = `${Date.now()}_${titulo}.jpg`;
         const dest = FileSystem.documentDirectory + fileName;
-        await FileSystem.copyAsync({ from: image, to: dest });
+        await FileSystem.copyAsync({ from: image, to: dest }); 
         localImageUri = dest;
       }
 
@@ -121,9 +136,11 @@ export default function AddBookScreen({ navigation }) {
         titulo,
         autor,
         status,
+        genero: genero === "Outros" ? generoOutros : genero,
         dataLancamento: formatarDataParaYYYYMMDD(dataLancamento),
         numPaginas: numPaginas || null,
         avaliacao: status === "Lido" ? avaliacao : 0,
+        avaliacaoEscrita: status === "Lido" ? avaliacaoEscrita : "",
         imagem: localImageUri,
         criadoEm: Timestamp.now(),
       };
@@ -133,13 +150,16 @@ export default function AddBookScreen({ navigation }) {
 
       Alert.alert("Sucesso", `Livro "${titulo}" adicionado!`);
 
-   
+      
       setTitulo("");
       setAutor("");
       setStatus("Quero Ler");
+      setGenero(null);
+      setGeneroOutros("");
       setDataLancamento("");
       setNumPaginas("");
       setAvaliacao(0);
+      setAvaliacaoEscrita("");
       setImage(null);
 
       navigation.goBack();
@@ -181,19 +201,46 @@ export default function AddBookScreen({ navigation }) {
             placeholder="Digite o autor"
           />
 
-          <Text style={styles.label}>Status *</Text>
+                <View style={{ zIndex: 3000 }}>
+          <Text style={styles.label}>Gênero *</Text>
           <DropDownPicker
-            open={open}
-            value={status}
-            items={items}
-            setOpen={setOpen}
-            setValue={setStatus}
-            setItems={setItems}
-            placeholder="Selecione o status"
+            open={openGenero}
+            value={genero}
+            items={itemsGenero}
+            setOpen={setOpenGenero}
+            setValue={setGenero}
+            setItems={setItemsGenero}
+            placeholder="Selecione o gênero"
             style={styles.dropdown}
             listMode="SCROLLVIEW"
             dropDownContainerStyle={styles.dropdownContainer}
           />
+          {genero === "Outros" && (
+            <TextInput
+              style={styles.input}
+              value={generoOutros}
+              onChangeText={setGeneroOutros}
+              placeholder="Escreva o gênero"
+            />
+          )}
+        </View>
+
+          <View style={{ zIndex: 2000, }}>
+            <Text style={styles.label}>Status *</Text>
+            <DropDownPicker
+              open={open}
+              value={status}
+              items={items}
+              setOpen={setOpen}
+              setValue={setStatus}
+              setItems={setItems}
+              placeholder="Selecione o status"
+              style={styles.dropdown}
+              listMode="SCROLLVIEW"
+              dropDownContainerStyle={styles.dropdownContainer}
+            />
+          </View>
+
 
           <Text style={styles.label}>Data de Lançamento</Text>
           <TextInput
@@ -215,31 +262,29 @@ export default function AddBookScreen({ navigation }) {
           />
 
           <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-  <Ionicons name="camera" size={24} color="#661414" style={styles.imageButtonIcon} />
-  <Text style={styles.imageButtonText}>
-    {image ? "Trocar Imagem" : "Adicionar Imagem"}
-  </Text>
-</TouchableOpacity>
+            <Ionicons name="camera" size={24} color="#661414" style={styles.imageButtonIcon} />
+            <Text style={styles.imageButtonText}>
+              {image ? "Trocar Imagem" : "Adicionar Imagem"}
+            </Text>
+          </TouchableOpacity>
 
-{image && (
-  <View style={styles.imageContainer}>
-    <Image
-      source={{ uri: image }}
-      style={styles.imagePreview}
-      resizeMode="cover"
-    />
+          {image && (
+            <View style={styles.imageContainer}>
+              <Image
+                source={{ uri: image }}
+                style={styles.imagePreview}
+                resizeMode="cover"
+              />
 
-    <TouchableOpacity
-      style={styles.removeImageButton}
-      onPress={() => setImage(null)}
-    >
-      <Ionicons name="trash" size={20} color="#661414" />
-      <Text style={styles.removeImageText}>Remover Imagem</Text>
-    </TouchableOpacity>
-  </View>
-)}
-
-
+              <TouchableOpacity
+                style={styles.removeImageButton}
+                onPress={() => setImage(null)}
+              >
+                <Ionicons name="trash" size={20} color="#661414" />
+                <Text style={styles.removeImageText}>Remover Imagem</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <Text style={styles.label}>Avaliação</Text>
           <View style={{ flexDirection: "row", marginBottom: 15 }}>
@@ -258,6 +303,19 @@ export default function AddBookScreen({ navigation }) {
               </TouchableOpacity>
             ))}
           </View>
+
+          {status === "Lido" && (
+            <>
+              <Text style={styles.label}>Avaliação Escrita</Text>
+              <TextInput
+                style={[styles.input, { height: 80 }]}
+                value={avaliacaoEscrita}
+                onChangeText={setAvaliacaoEscrita}
+                placeholder="Escreva sua opinião sobre o livro"
+                multiline
+              />
+            </>
+          )}
 
           <TouchableOpacity
             style={styles.button}

@@ -30,6 +30,7 @@ export default StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: -17,
   },
+
   buscarContainer: {
     flex: 1,
     flexDirection: "row",
@@ -38,53 +39,70 @@ export default StyleSheet.create({
     borderRadius: 12,
     marginRight: 10,
   },
+
   searchIcon: {
     marginLeft: 6,
   },
+
   closeIcon: {
     marginRight: 6,
   },
+
   buscarInput: {
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 6,
     color: "#600",
   },
+
   botaoCadastrar: {
     backgroundColor: "#600",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
   },
+
   textoCadastrar: {
     color: "#fff",
     fontWeight: "bold",
   },
 
-  filtroMenuContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 10,
-    marginTop: 20,
-    marginBottom: 3
-  },
-  filtroPill: {
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    marginHorizontal: 5,
-    backgroundColor: "#ffd6d6",
-  },
-  filtroPillAtivo: {
-    backgroundColor: "#600",
-  },
-  filtroTexto: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#600",
-  },
-  filtroTextoAtivo: {
-    color: "#fff",
-  },
+ filtroMenuContainer: {
+  marginVertical: 10,
+  paddingHorizontal: 30,
+  marginTop: 20,
+},
+
+filtroPill: {
+  marginRight: 8,
+  paddingVertical: 6,
+  paddingHorizontal: 15,
+  borderRadius: 20, 
+  alignItems: "center",
+  justifyContent: "center", 
+  marginBottom: 15,
+},
+
+
+filtroTexto: {
+  color: "#600",
+  fontWeight: "400",
+  fontSize: 18,
+  textAlign: "center",
+},
+
+filtroTextoAtivo: {
+  fontWeight: "400",
+  color: "#661414",
+},
+
+underline: {
+  height: 2,
+  backgroundColor: "#661414",
+  width: "140%",
+  marginTop: 4,
+  borderRadius: 1,
+},
 
   titulo: {
     fontSize: 20,
